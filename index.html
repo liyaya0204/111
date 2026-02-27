@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧工地大数据可视化平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1b2a 100%);
+            color: #fff;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            display: grid;
+            grid-template-rows: 80px 1fr;
+            gap: 20px;
+        }
+
+        /* 头部样式 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 150, 255, 0.1) 20%, rgba(0, 150, 255, 0.2) 50%, rgba(0, 150, 255, 0.1) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(0, 150, 255, 0.5);
+            padding: 0 40px;
+            position: relative;
+        }
+
+        .header::before,
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        .header::before { left: 20%; }
+        .header::after { right: 20%; animation-delay: 1.5s; }
+
+        @keyframes scan {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .header-title {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(180deg, #fff 0%, #00d4ff 50%, #0096ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 150, 255, 0.5);
+            letter-spacing: 8px;
+        }
+
+        .header-time {
+            font-size: 18px;
+            color: #00d4ff;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .header-time .date {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 主体内容 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 25% 50% 25%;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(0, 50, 100, 0.15);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 10px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.5), transparent, rgba(0, 212, 255, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            padding-left: 15px;
+            border-left: 4px solid #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '◆';
+            color: #00d4ff;
+            font-size: 12px;
+        }
+
+        /* 左侧面板 */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 100, 200, 0.2), rgba(0, 50, 100, 0.1));
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(0, 100, 200, 0.3));
+            border: 2px solid rgba(0, 212, 255, 0.5);
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 5px;
+        }
+
+        .stat-info .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .stat-info .unit {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 5px;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-height: 200px;
+        }
+
+        /* 中间面板 */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .center-top {
+            height: 60%;
+            position: relative;
+        }
+
+        .site-map {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0, 100, 200, 0.1) 0%, transparent 70%);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .site-map::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            animation: pulse 2s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+        }
+
+        .alert-item {
+            position: absolute;
+            background: rgba(255, 100, 100, 0.9);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            animation: alertPulse 1.5s ease-in-out infinite;
+            cursor: pointer;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(255, 100, 100, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 100, 100, 0.8); }
+        }
+
+        .center-bottom {
+            height: 40%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* 右侧面板 */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progress-item {
+            background: rgba(0, 50, 100, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-fill.high { background: linear-gradient(90deg, #00d4ff, #0096ff); }
+        .progress-fill.medium { background: linear-gradient(90deg, #ffd700, #ffaa00); }
+        .progress-fill.low { background: linear-gradient(90deg, #ff6b6b, #ff4757); }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .device-item {
+            background: rgba(0, 50, 100, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .device-item:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .device-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-bottom: 8px;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        .device-status.online { background: #00d4ff; box-shadow: 0 0 10px #00d4ff; }
+        .device-status.offline { background: #ff4757; box-shadow: 0 0 10px #ff4757; }
+        .device-status.warning { background: #ffd700; box-shadow: 0 0 10px #ffd700; }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .device-name {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .device-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* 滚动列表 */
+        .scroll-list {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .scroll-content {
+            animation: scrollUp 15s linear infinite;
+        }
+
+        @keyframes scrollUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+
+        .list-item:hover {
+            background: rgba(0, 150, 255, 0.1);
+        }
+
+        .tag {
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .tag.warning { background: rgba(255, 193, 7, 0.3); color: #ffc107; }
+        .tag.danger { background: rgba(220, 53, 69, 0.3); color: #dc3545; }
+        .tag.info { background: rgba(0, 150, 255, 0.3); color: #00d4ff; }
+
+        /* 装饰元素 */
+        .corner-decoration {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00d4ff;
+        }
+
+        .corner-decoration.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .corner-decoration.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+        .corner-decoration.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+        .corner-decoration.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        /* 响应式 */
+        @media (max-width: 1400px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+            .center-panel {
+                grid-column: 1 / -1;
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div style="width: 200px;"></div>
+            <h1 class="header-title">智慧工地大数据可视化平台</h1>
+            <div class="header-time">
+                <span id="clock">00:00:00</span>
+                <span class="date" id="date">2024年1月1日 星期一</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 左侧面板 -->
+            <div class="left-panel">
+                <!-- 人员统计 -->
+                <div class="panel">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">人员统计</h2>
+                    <div class="stat-card">
+                        <div class="stat-icon">👷</div>
+                        <div class="stat-info">
+                            <h3>现场总人数</h3>
+                            <span class="number" id="totalWorkers">286</span><span class="unit">人</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🦺</div>
+                        <div class="stat-info">
+                            <h3>管理人员</h3>
+                            <span class="number" id="managerCount">32</span><span class="unit">人</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔧</div>
+                        <div class="stat-info">
+                            <h3>施工人员</h3>
+                            <span class="number" id="workerCount">254</span><span class="unit">人</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 安全统计 -->
+                <div class="panel" style="flex: 1;">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">安全统计</h2>
+                    <div id="safetyChart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <!-- 中间面板 -->
+            <div class="center-panel">
+                <!-- 工地实时监控 -->
+                <div class="panel center-top">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">工地实时监控</h2>
+                    <div class="site-map">
+                        <div class="map-overlay">
+                            <div class="alert-item" style="top: 20%; left: 30%;">⚠️ 塔吊区域</div>
+                            <div class="alert-item" style="top: 60%; left: 70%;">⚠️ 深基坑</div>
+                            <div class="alert-item" style="top: 40%; left: 50%;">⚠️ 材料堆放区</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部图表 -->
+                <div class="center-bottom">
+                    <div class="panel">
+                        <div class="corner-decoration tl"></div>
+                        <div class="corner-decoration tr"></div>
+                        <div class="corner-decoration bl"></div>
+                        <div class="corner-decoration br"></div>
+                        <h2 class="panel-title">施工进度</h2>
+                        <div id="progressChart" style="height: 200px;"></div>
+                    </div>
+                    <div class="panel">
+                        <div class="corner-decoration tl"></div>
+                        <div class="corner-decoration tr"></div>
+                        <div class="corner-decoration bl"></div>
+                        <div class="corner-decoration br"></div>
+                        <h2 class="panel-title">环境监测</h2>
+                        <div id="environmentChart" style="height: 200px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <div class="right-panel">
+                <!-- 工程进度 -->
+                <div class="panel">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">工程进度</h2>
+                    <div class="progress-list">
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>主体结构</span>
+                                <span style="color: #00d4ff;">85%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill high" style="width: 85%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>装饰装修</span>
+                                <span style="color: #ffd700;">45%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill medium" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>机电安装</span>
+                                <span style="color: #ff4757;">30%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill low" style="width: 30%;"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span>园林绿化</span>
+                                <span style="color: #ffd700;">15%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill low" style="width: 15%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 设备状态 -->
+                <div class="panel">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">设备状态</h2>
+                    <div class="device-grid">
+                        <div class="device-item">
+                            <span class="device-status online"></span>
+                            <div class="device-name">塔吊</div>
+                            <div class="device-value">6台</div>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-status online"></span>
+                            <div class="device-name">升降机</div>
+                            <div class="device-value">8台</div>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-status warning"></span>
+                            <div class="device-name">挖掘机</div>
+                            <div class="device-value">3台</div>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-status online"></span>
+                            <div class="device-name">监控设备</div>
+                            <div class="device-value">24个</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实时告警 -->
+                <div class="panel" style="flex: 1;">
+                    <div class="corner-decoration tl"></div>
+                    <div class="corner-decoration tr"></div>
+                    <div class="corner-decoration bl"></div>
+                    <div class="corner-decoration br"></div>
+                    <h2 class="panel-title">实时告警</h2>
+                    <div class="scroll-list">
+                        <div class="scroll-content" id="alertList">
+                            <div class="list-item">
+                                <span>A区塔吊超载预警</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                            <div class="list-item">
+                                <span>B区未佩戴安全帽</span>
+                                <span class="tag danger">严重</span>
+                            </div>
+                            <div class="list-item">
+                                <span>C区PM2.5超标</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                            <div class="list-item">
+                                <span>D区人员闯入</span>
+                                <span class="tag danger">严重</span>
+                            </div>
+                            <div class="list-item">
+                                <span>E区设备离线</span>
+                                <span class="tag info">提示</span>
+                            </div>
+                            <div class="list-item">
+                                <span>F区噪音超标</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                            <!-- 复制一份用于无缝滚动 -->
+                            <div class="list-item">
+                                <span>A区塔吊超载预警</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                            <div class="list-item">
+                                <span>B区未佩戴安全帽</span>
+                                <span class="tag danger">严重</span>
+                            </div>
+                            <div class="list-item">
+                                <span>C区PM2.5超标</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                            <div class="list-item">
+                                <span>D区人员闯入</span>
+                                <span class="tag danger">严重</span>
+                            </div>
+                            <div class="list-item">
+                                <span>E区设备离线</span>
+                                <span class="tag info">提示</span>
+                            </div>
+                            <div class="list-item">
+                                <span>F区噪音超标</span>
+                                <span class="tag warning">警告</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 时钟更新
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+            const dateStr = now.toLocaleDateString('zh-CN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long' 
+            });
+            document.getElementById('clock').textContent = timeStr;
+            document.getElementById('date').textContent = dateStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 数字动画
+        function animateNumber(elementId, targetValue, duration = 2000) {
+            const element = document.getElementById(elementId);
+            const startValue = 0;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                const currentValue = Math.floor(startValue + (targetValue - startValue) * easeProgress);
+                element.textContent = currentValue;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        // 初始化数字动画
+        setTimeout(() => {
+            animateNumber('totalWorkers', 286);
+            animateNumber('managerCount', 32);
+            animateNumber('workerCount', 254);
+        }, 500);
+
+        // ECharts 配置
+        // 安全统计饼图
+        const safetyChart = echarts.init(document.getElementById('safetyChart'));
+        const safetyOption = {
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(0, 20, 40, 0.9)',
+                borderColor: '#00d4ff',
+                textStyle: { color: '#fff' }
+            },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                textStyle: { color: '#fff', fontSize: 12 }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['35%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 5,
+                    borderColor: '#0a1628',
+                    borderWidth: 2
+                },
+                label: { show: false },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        color: '#fff'
+                    }
+                },
+                data: [
+                    { value: 156, name: '安全行为', itemStyle: { color: '#00d4ff' } },
+                    { value: 23, name: '违规操作', itemStyle: { color: '#ff4757' } },
+                    { value: 45, name: '隐患整改', itemStyle: { color: '#ffd700' } },
+                    { value: 62, name: '正常施工', itemStyle: { color: '#2ed573' } }
+                ]
+            }]
+        };
+        safetyChart.setOption(safetyOption);
+
+        // 施工进度柱状图
+        const progressChart = echarts.init(document.getElementById('progressChart'));
+        const progressOption = {
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(0, 20, 40, 0.9)',
+                borderColor: '#00d4ff',
+                textStyle: { color: '#fff' }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '10%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                axisLabel: { color: '#fff' }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                axisLabel: { color: '#fff' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            series: [{
+                type: 'bar',
+                data: [15, 28, 42, 58, 72, 85],
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#00d4ff' },
+                        { offset: 1, color: '#0096ff' }
+                    ]),
+                    borderRadius: [4, 4, 0, 0]
+                },
+                barWidth: '50%'
+            }]
+        };
+        progressChart.setOption(progressOption);
+
+        // 环境监测折线图
+        const environmentChart = echarts.init(document.getElementById('environmentChart'));
+        const environmentOption = {
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(0, 20, 40, 0.9)',
+                borderColor: '#00d4ff',
+                textStyle: { color: '#fff' }
+            },
+            legend: {
+                data: ['PM2.5', '噪音', '温度'],
+                textStyle: { color: '#fff', fontSize: 10 },
+                top: 0,
+                itemWidth: 15,
+                itemHeight: 10
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '20%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                axisLabel: { color: '#fff', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                axisLabel: { color: '#fff', fontSize: 10 },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            series: [
+                {
+                    name: 'PM2.5',
+                    type: 'line',
+                    smooth: true,
+                    data: [45, 52, 68, 75, 58, 48],
+                    lineStyle: { color: '#00d4ff', width: 2 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(0, 212, 255, 0.3)' },
+                            { offset: 1, color: 'rgba(0, 212, 255, 0)' }
+                        ])
+                    },
+                    symbol: 'none'
+                },
+                {
+                    name: '噪音',
+                    type: 'line',
+                    smooth: true,
+                    data: [55, 62, 75, 82, 68, 58],
+                    lineStyle: { color: '#ffd700', width: 2 },
+                    symbol: 'none'
+                },
+                {
+                    name: '温度',
+                    type: 'line',
+                    smooth: true,
+                    data: [22, 25, 30, 32, 28, 24],
+                    lineStyle: { color: '#ff6b6b', width: 2 },
+                    symbol: 'none'
+                }
+            ]
+        };
+        environmentChart.setOption(environmentOption);
+
+        // 窗口大小改变时重新渲染图表
+        window.addEventListener('resize', () => {
+            safetyChart.resize();
+            progressChart.resize();
+            environmentChart.resize();
+        });
+
+        // 模拟实时数据更新
+        setInterval(() => {
+            // 更新人员数量
+            const totalWorkers = 280 + Math.floor(Math.random() * 20);
+            document.getElementById('totalWorkers').textContent = totalWorkers;
+            
+            // 更新环境监测数据
+            const newData1 = environmentOption.series[0].data.slice(1);
+            newData1.push(40 + Math.floor(Math.random() * 40));
+            environmentOption.series[0].data = newData1;
+            
+            const newData2 = environmentOption.series[1].data.slice(1);
+            newData2.push(50 + Math.floor(Math.random() * 40));
+            environmentOption.series[1].data = newData2;
+            
+            const newData3 = environmentOption.series[2].data.slice(1);
+            newData3.push(20 + Math.floor(Math.random() * 15));
+            environmentOption.series[2].data = newData3;
+            
+            environmentChart.setOption(environmentOption);
+        }, 5000);
+    </script>
+</body>
+</html>
